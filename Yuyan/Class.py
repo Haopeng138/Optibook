@@ -132,39 +132,22 @@ def main():
             
             print(exchange.get_pnl())
         if result[0]==1:
-            print(exchange.get_pnl())
-            
             # Worst case: About to exceed limits of positive basket -> Need to sell immediately
             if positions_and_cash[case[0]]["volume"] + volume_basket >= 450:
-                response: InsertOrderResponse = exchange.insert_order(case[0], price=result[1], volume=volume_basket, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
-                print_order_response(response)
+                exchange.insert_order(case[0], price=result[1], volume=volume_basket, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
             # Worst case: About to exceed limits of negative stock1 -> Need to buy immediately
             if positions_and_cash[case[1]]["volume"] - volume_stock <= -450:
-                response: InsertOrderResponse = exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
-                print_order_response(response)
+                exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
             # Worst case: About to exceed limits of negative stock2 -> Need to buy immediately
             if positions_and_cash[case[2]]["volume"] - volume_stock <= -450:
-                response: InsertOrderResponse = exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
-                print_order_response(response)
+                exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
                 
             # Start buying basket and selling stock
-            response: InsertOrderResponse = exchange.insert_order(case[0], price=result[1]+result[7]*offsetBuyBacket, volume=volume_basket, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
-            # print_order_response(response)
-            response: InsertOrderResponse = exchange.insert_order(case[1], price=result[3]-result[7]*offsetSell, volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
-            # print_order_response(response)
-            response: InsertOrderResponse = exchange.insert_order(case[2], price=result[5]-result[7]*offsetSell, volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+            exchange.insert_order(case[0], price=result[1]+result[7]*offsetBuyBacket, volume=volume_basket, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+            exchange.insert_order(case[1], price=result[3]-result[7]*offsetSell, volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+            exchange.insert_order(case[2], price=result[5]-result[7]*offsetSell, volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
             
-            print(exchange.get_pnl())
             
-        '''
-        for pos in positions_and_cash:
-            if positions_and_cash[pos]["volume"] > 280:
-                response: InsertOrderResponse = exchange.insert_order(pos, price=50, volume=15, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
-                print_order_response(response)
-            if positions_and_cash[pos]["volume"]< -280:
-                response: InsertOrderResponse = exchange.insert_order(pos, price=210, volume=15, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
-                print_order_response(response)
-        '''
         
         time.sleep(0.04)
         

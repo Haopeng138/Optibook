@@ -61,15 +61,17 @@ def exists_gain(e, b_id, s1_id, s2_id):
     book_s2 = e.get_last_price_book(s2_id)
     
     if book_b and book_s1.bids and book_s2.bids and book_b.asks:
-        # Buy stock and sell basket 
+        # Comprar stock y vender basket 
         gain = (book_s1.bids[0].price + book_s2.bids[0].price) - (2*book_b.asks[0].price)
-        if (gain > 0.4):
+        if (gain > 0.5):
+            # print([0, book_b.asks[0].price, book_b.asks[0].volume, book_s1.bids[0].price, book_s1.bids[0].volume, book_s2.bids[0].price, book_s2.bids[0].volume])
             return [0, book_b.asks[0].price, book_b.asks[0].volume, book_s1.bids[0].price, book_s1.bids[0].volume, book_s2.bids[0].price, book_s2.bids[0].volume, gain]
             
     if book_b and book_s1.asks and book_s2.asks and book_b.bids:
-        # Buy basket and sell stock
+        # Comprar basket y vender stock
         gain = (2*book_b.bids[0].price) - (book_s1.asks[0].price + book_s2.asks[0].price)
-        if (gain > 0.4):
+        if (gain > 0.5):
+            # print([1, book_b.bids[0].price, book_b.bids[0].volume, book_s1.asks[0].price, book_s1.asks[0].volume, book_s2.asks[0].price, book_s2.asks[0].volume])
             return [1, book_b.bids[0].price, book_b.bids[0].volume, book_s1.asks[0].price, book_s1.asks[0].volume, book_s2.asks[0].price, book_s2.asks[0].volume, gain]
 
     return [False]
@@ -85,8 +87,8 @@ def main():
     # closeAllPosition(exchange)
     print(exchange.get_positions_and_cash())
     
-    volume_basket = 2
-    volume_stock = 1
+    volume_basket = 10
+    volume_stock = 5
     
     while True:
         case = ["C1_FOSSIL_FUEL_ETF", "C1_GAS_INC", "C1_OIL_CORP"]
@@ -95,51 +97,77 @@ def main():
             case = ["C2_GREEN_ENERGY_ETF", 'C2_SOLAR_CO', 'C2_WIND_LTD']
             result = exists_gain(exchange, case[0], case[1], case[2])
             if len(result)<=1:
-                time.sleep(0.04)
+                # time.sleep(1)
                 continue
             
-        # print("Result in main: ", result)
+        print("REsult in main: ", result)
         
         positions_and_cash = exchange.get_positions_and_cash()
         
         if result[0]==0:
+            print(exchange.get_pnl())
+            # # Keep position arount boundaries
             # Worst case: About to exceed limits of negative basket -> Need to buy immediately
             if positions_and_cash[case[0]]["volume"] - volume_basket <= -450:
-                exchange.insert_order(case[0], price=result[1], volume=volume_basket, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+                response: InsertOrderResponse = exchange.insert_order(case[0], price=result[1], volume=volume_basket, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+                # print_order_response(response)
             # Worst case: About to exceed limits of positive stock1 -> Need to sell immediately
             if positions_and_cash[case[1]]["volume"] + volume_stock >= 450:
-                exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+                response: InsertOrderResponse = exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+                # print_order_response(response)
             # Worst case: About to exceed limits of positive stock2 -> Need to sell immediately
             if positions_and_cash[case[2]]["volume"] + volume_stock >= 450:
-                exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+                response: InsertOrderResponse = exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+                # print_order_response(response)
+                
             # Start buying stock and selling basket
-            exchange.insert_order(case[0], price=result[1], volume=volume_basket, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
-            exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
-            exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+            response: InsertOrderResponse = exchange.insert_order(case[0], price=result[1]+0.2*result[7], volume=volume_basket, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+            # print_order_response(response)
+            response: InsertOrderResponse = exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+            # print_order_response(response)
+            response: InsertOrderResponse = exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
             
-            # print(exchange.get_pnl())
-            
+            print(exchange.get_pnl())
         if result[0]==1:
+            print(exchange.get_pnl())
+            
             # Worst case: About to exceed limits of positive basket -> Need to sell immediately
             if positions_and_cash[case[0]]["volume"] + volume_basket >= 450:
-                exchange.insert_order(case[0], price=result[1], volume=volume_basket, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+                response: InsertOrderResponse = exchange.insert_order(case[0], price=result[1], volume=volume_basket, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+                print_order_response(response)
             # Worst case: About to exceed limits of negative stock1 -> Need to buy immediately
             if positions_and_cash[case[1]]["volume"] - volume_stock <= -450:
-                exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+                response: InsertOrderResponse = exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+                print_order_response(response)
             # Worst case: About to exceed limits of negative stock2 -> Need to buy immediately
             if positions_and_cash[case[2]]["volume"] - volume_stock <= -450:
-                exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+                response: InsertOrderResponse = exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+                print_order_response(response)
+                
             # Start buying basket and selling stock
-            exchange.insert_order(case[0], price=result[1], volume=volume_basket, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
-            exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
-            exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+            response: InsertOrderResponse = exchange.insert_order(case[0], price=result[1]-0.2*result[7], volume=volume_basket, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+            # print_order_response(response)
+            response: InsertOrderResponse = exchange.insert_order(case[1], price=result[3], volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+            # print_order_response(response)
+            response: InsertOrderResponse = exchange.insert_order(case[2], price=result[5], volume=volume_stock, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
             
-            # print(exchange.get_pnl())
-    
-        time.sleep(0.04)
+            print(exchange.get_pnl())
+            
+        '''
+        for pos in positions_and_cash:
+            if positions_and_cash[pos]["volume"] > 280:
+                response: InsertOrderResponse = exchange.insert_order(pos, price=50, volume=15, side=SIDE_ASK, order_type=ORDER_TYPE_IOC)
+                print_order_response(response)
+            if positions_and_cash[pos]["volume"]< -280:
+                response: InsertOrderResponse = exchange.insert_order(pos, price=210, volume=15, side=SIDE_BID, order_type=ORDER_TYPE_IOC)
+                print_order_response(response)
+        '''
+        
+        # time.sleep(1)
+        
         
     
-    # print(exchange.get_positions_and_cash())
+    print(exchange.get_positions_and_cash())
     
 
 if __name__ == '__main__':
