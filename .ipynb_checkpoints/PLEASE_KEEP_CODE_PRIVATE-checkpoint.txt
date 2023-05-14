@@ -1,0 +1,9 @@
+Hey there!
+
+We hope you're having a great time playing with Optibook. We kindly ask you to please not share or make any solutions
+you come up with public, as it enables cheating for future participants. We've had issues with this in the past, so
+please help keep the challenge fair and do note share solutions publicly.
+
+That means no public git repositories, or any other public solution sharing. Private git repositories are okay.
+
+Do note, it is fine to create private repositories!

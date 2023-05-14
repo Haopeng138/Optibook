@@ -1,4 +1,7 @@
 {
+   "build": {
+      "@saveall": true
+   },
    "extensions": {
       "@editor.acceptSuggestionOnEnter": "on",
       "@editor.snippetSuggestions": "top",
